@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIBEN ICT Quiz</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+height:100vh;
+overflow:hidden;
+background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+z-index:-1;
+}
+
+.container{
+width:95%;
+max-width:900px;
+padding:30px;
+border-radius:25px;
+background: rgba(255,255,255,0.08);
+backdrop-filter: blur(25px);
+-webkit-backdrop-filter: blur(25px);
+border:1px solid rgba(255,255,255,0.2);
+box-shadow:0 25px 50px rgba(0,0,0,0.5);
+animation:fadeIn 1s ease;
+max-height:90vh;
+overflow:hidden;
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(30px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+h1{
+text-align:center;
+margin-bottom:15px;
+font-weight:700;
+}
+
+.timer{
+text-align:right;
+font-weight:600;
+font-size:18px;
+margin-bottom:15px;
+transition:0.3s;
+}
+
+.question{
+font-size:18px;
+margin-bottom:15px;
+}
+
+.options button{
+width:100%;
+margin:8px 0;
+padding:12px;
+border:none;
+border-radius:15px;
+cursor:pointer;
+background:rgba(255,255,255,0.15);
+color:white;
+font-weight:500;
+backdrop-filter:blur(15px);
+transition:0.3s;
+opacity:0;
+}
+
+.options button:hover{
+background:rgba(255,255,255,0.3);
+transform:scale(1.03);
+}
+
+.left{animation:slideLeft 0.6s forwards;}
+.right{animation:slideRight 0.6s forwards;}
+
+@keyframes slideLeft{
+from{opacity:0;transform:translateX(-50px);}
+to{opacity:1;transform:translateX(0);}
+}
+
+@keyframes slideRight{
+from{opacity:0;transform:translateX(50px);}
+to{opacity:1;transform:translateX(0);}
+}
+
+.hidden{display:none;}
+
+.result{
+margin-top:20px;
+max-height:60vh;
+overflow-y:auto;
+padding-right:10px;
+scroll-behavior:smooth;
+}
+
+/* Hide scrollbar but allow scroll */
+.result::-webkit-scrollbar{
+width:6px;
+}
+.result::-webkit-scrollbar-thumb{
+background:rgba(255,255,255,0.3);
+border-radius:10px;
+}
+
+.correct{background:#00c853 !important;}
+.wrong{background:#d50000 !important;}
+
+button.action{
+margin-top:15px;
+padding:10px 20px;
+border:none;
+border-radius:20px;
+cursor:pointer;
+font-weight:600;
+background:linear-gradient(45deg,#00c6ff,#0072ff);
+color:white;
+}
+
+button.action:hover{
+transform:scale(1.05);
+}
+
+.start-screen{
+text-align:center;
+}
+
+input{
+padding:12px;
+border-radius:12px;
+border:none;
+width:100%;
+margin-bottom:15px;
+outline:none;
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="container">
+
+<h1>UNIBEN ICT Quiz</h1>
+
+<div id="startScreen" class="start-screen">
+<input type="text" id="studentName" placeholder="Enter Your Name">
+<button class="action" onclick="startQuiz()">Start Quiz</button>
+</div>
+
+<div id="quizSection" class="hidden">
+<div class="timer" id="timer">03:00</div>
+<div id="quizBox">
+<div class="question" id="question"></div>
+<div class="options" id="options"></div>
+</div>
+</div>
+
+<div class="result hidden" id="result"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+
+/* PARTICLES */
+const canvas=document.getElementById("bg");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+for(let i=0;i<80;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+r:Math.random()*2+1,
+d:Math.random()*1
+});
+}
+
+function drawParticles(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.fillStyle="rgba(255,255,255,0.4)";
+particles.forEach(p=>{
+ctx.beginPath();
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
+ctx.fill();
+});
+particles.forEach(p=>{
+p.y+=p.d;
+if(p.y>canvas.height){
+p.y=0;
+p.x=Math.random()*canvas.width;
+}
+});
+}
+setInterval(drawParticles,30);
+
+/* QUIZ LOGIC */
+
+let index=0;
+let score=0;
+let answers=[];
+let time=180;
+let student="";
+
+const question=document.getElementById("question");
+const options=document.getElementById("options");
+const resultBox=document.getElementById("result");
+const timerDisplay=document.getElementById("timer");
+
+function startQuiz(){
+let name=document.getElementById("studentName").value.trim();
+if(name===""){
+alert("Please enter your name before starting.");
+return;
+}
+student=name;
+document.getElementById("startScreen").classList.add("hidden");
+document.getElementById("quizSection").classList.remove("hidden");
+startTimer();
+loadQuestion();
+}
+
+function startTimer(){
+let interval=setInterval(()=>{
+time--;
+let min=Math.floor(time/60);
+let sec=time%60;
+timerDisplay.innerText=`${min<10?"0":""}${min}:${sec<10?"0":""}${sec}`;
+if(time<=27){
+timerDisplay.style.color="red";
+}
+if(time<=0){
+clearInterval(interval);
+finishQuiz();
+}
+},1000);
+}
+
+function loadQuestion(){
+if(index>=quiz.length){
+finishQuiz();
+return;
+}
+let q=quiz[index];
+question.innerText=q.q;
+options.innerHTML="";
+q.o.forEach((opt,i)=>{
+let btn=document.createElement("button");
+btn.innerText=opt;
+btn.classList.add(i%2===0?"left":"right");
+btn.style.animationDelay=`${i*0.15}s`;
+btn.onclick=()=>{
+answers.push(i);
+if(i===q.a) score++;
+index++;
+loadQuestion();
+};
+options.appendChild(btn);
+});
+}
+
+function finishQuiz(){
+document.getElementById("quizSection").classList.add("hidden");
+resultBox.classList.remove("hidden");
+
+let percentage=Math.round((score/quiz.length)*100);
+let remark=percentage>=50?"Impressive 🎉":"Improve 💪";
+
+if(percentage>=50){
+confetti({particleCount:200,spread:120});
+}
+
+resultBox.innerHTML=`
+<h2>${student} you scored ${score}/25 (${percentage}%)</h2>
+<h3>${remark}</h3>
+<button class="action" onclick="showReview()">Click to see wrong answers</button>
+<br>
+<button class="action" onclick="window.open('https://wa.me/2348079558310')">See more about developer</button>
+<div id="review"></div>
+`;
+}
+
+function showReview(){
+let review=document.getElementById("review");
+review.innerHTML="";
+quiz.forEach((q,i)=>{
+let div=document.createElement("div");
+div.style.marginBottom="15px";
+div.innerHTML=`<p>${q.q}</p>`;
+q.o.forEach((opt,index)=>{
+let p=document.createElement("p");
+p.innerText=opt;
+p.style.padding="5px";
+if(index===q.a) p.classList.add("correct");
+if(answers[i]!==q.a && index===answers[i]) p.classList.add("wrong");
+div.appendChild(p);
+});
+review.appendChild(div);
+});
+}
+
+</script>
+</body>
+</html>
