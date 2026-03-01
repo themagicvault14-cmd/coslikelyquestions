@@ -25,6 +25,7 @@ align-items:center;
 color:white;
 }
 
+/* Animated particle background */
 canvas{
 position:fixed;
 top:0;
@@ -32,6 +33,7 @@ left:0;
 z-index:-1;
 }
 
+/* Glass Card */
 .container{
 width:95%;
 max-width:900px;
@@ -43,8 +45,6 @@ backdrop-filter: blur(25px);
 border:1px solid rgba(255,255,255,0.2);
 box-shadow:0 25px 50px rgba(0,0,0,0.5);
 animation:fadeIn 1s ease;
-max-height:90vh;
-overflow:hidden;
 }
 
 @keyframes fadeIn{
@@ -108,19 +108,6 @@ to{opacity:1;transform:translateX(0);}
 
 .result{
 margin-top:20px;
-max-height:60vh;
-overflow-y:auto;
-padding-right:10px;
-scroll-behavior:smooth;
-}
-
-/* Hide scrollbar but allow scroll */
-.result::-webkit-scrollbar{
-width:6px;
-}
-.result::-webkit-scrollbar-thumb{
-background:rgba(255,255,255,0.3);
-border-radius:10px;
 }
 
 .correct{background:#00c853 !important;}
@@ -140,20 +127,6 @@ color:white;
 button.action:hover{
 transform:scale(1.05);
 }
-
-.start-screen{
-text-align:center;
-}
-
-input{
-padding:12px;
-border-radius:12px;
-border:none;
-width:100%;
-margin-bottom:15px;
-outline:none;
-}
-
 </style>
 </head>
 <body>
@@ -161,31 +134,23 @@ outline:none;
 <canvas id="bg"></canvas>
 
 <div class="container">
-
 <h1>UNIBEN ICT Quiz</h1>
 
-<div id="startScreen" class="start-screen">
-<input type="text" id="studentName" placeholder="Enter Your Name">
-<button class="action" onclick="startQuiz()">Start Quiz</button>
-</div>
-
-<div id="quizSection" class="hidden">
 <div class="timer" id="timer">03:00</div>
+
 <div id="quizBox">
 <div class="question" id="question"></div>
 <div class="options" id="options"></div>
 </div>
-</div>
 
 <div class="result hidden" id="result"></div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
 
-/* PARTICLES */
+/* PARTICLE ANIMATION */
 const canvas=document.getElementById("bg");
 const ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
@@ -209,6 +174,10 @@ ctx.beginPath();
 ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
 ctx.fill();
 });
+update();
+}
+
+function update(){
 particles.forEach(p=>{
 p.y+=p.d;
 if(p.y>canvas.height){
@@ -217,33 +186,48 @@ p.x=Math.random()*canvas.width;
 }
 });
 }
+
 setInterval(drawParticles,30);
 
-/* QUIZ LOGIC */
+
+/* QUIZ DATA */
+const quiz=[
+{q:`1... Which of the generation leads to the development of Internet`,o:["5th generation","3rd generation","4th generation","2nd generation"],a:2},
+{q:`2.... Which of this protocol is design to search,retrieve and display documents from remote`,o:["Archie","Gopher","Maily mail","Telnet"],a:1},
+{q:`3... Precious( ICT course rep) drop a message in the community group which allow every member of the community to see the message. This is an example of`,o:["Mail forwarding services","Gopher","Maily mix","Telnet"],a:2},
+{q:`4... Which of this is categorize under Auxiliary hardware`,o:["Heat sink","Bridge","Router","Analog model"],a:0},
+{q:`5... In hybrid computer which component serves as solver of differential equation`,o:["Analog","Expansion card","Digital","The control unit"],a:0},
+{q:`6... Convert A45 base 16 to Octal`,o:["5115","5105","5015","4515"],a:1},
+{q:`7.... Convert 11100101 to Hexadecimal`,o:["E5","5E","D5","5D"],a:0},
+{q:`8... The smallest addressable memory data item on a computer is...`,o:["Bit","Byte","Nibble","A&B"],a:1},
+{q:`9.... In ASCII the letter D code value is`,o:["65","71","68","97"],a:2},
+{q:`10... One of the uses of ASCII is`,o:["Text emulation","Text manipulation which includes sorting, collating and constructing sentences","Accepting text as either information or command","All of the above"],a:3},
+{q:`11... Integrated circuit was built in`,o:["Micro processor","Central processor","Silicon chip","None of the above"],a:2},
+{q:`12... One of the following is 7 bits encoding scheme`,o:["BCD","EBCDIC","ASCII","All of the above"],a:2},
+{q:`13... Convert 10111010 in Binary to Hexadecimal`,o:["CA","BA","7B","7A"],a:1},
+{q:`14... One of the following is used in weather forecasting research`,o:["Mainframe","Mini computer","Super computer","Hybrid computer"],a:2},
+{q:`15... One of this is use to locate files on anonymous ftp server`,o:["Ftp","Archie","Gopher","TCP"],a:1},
+{q:`16... Which of the type of web browser allow the user to see more of what the website pass to offer`,o:["Text oriented browser","Graphical browser","Google browser","Firefox"],a:1},
+{q:`17... Application software can also be classified under special purpose computer`,o:["True","False","A&B","I don't know"],a:0},
+{q:`18... The components of computer which connect various components of computer and allow them to communicate is`,o:["Expansion card","Central processing unit","Optical drive","Motherboard"],a:3},
+{q:`19... Code value of ASCII is`,o:["0-127","0...63","1-128","0-128"],a:0},
+{q:`20.... The last bit of the BCD represent`,o:["The zone","The magnitude (0-7)","Digit parity","The character value"],a:2},
+{q:`21... An acronym for electronic Numerical Integrator and Calculator is`,o:["ENIC","EDVAC","ENIAC","ENAIC"],a:2},
+{q:`22... All are components of the motherboard except`,o:["USB","PCI slot","Floppy controller","Parallel plug in"],a:3},
+{q:`23... These are insceptable circuit boils to add functionality to a computer`,o:["Optical drive","Expansion card","Hard drive","All of the above"],a:1},
+{q:`24... Your phone is an example of`,o:["Mini computer","Micro computer","Super computer","Mainframe computer"],a:1},
+{q:`25... Which of the following can operate non stop for more than 10yrs`,o:["Mini computer","Super computer","Mainframe computer","Micro computer"],a:2}
+];
 
 let index=0;
 let score=0;
 let answers=[];
 let time=180;
-let student="";
 
 const question=document.getElementById("question");
 const options=document.getElementById("options");
 const resultBox=document.getElementById("result");
 const timerDisplay=document.getElementById("timer");
-
-function startQuiz(){
-let name=document.getElementById("studentName").value.trim();
-if(name===""){
-alert("Please enter your name before starting.");
-return;
-}
-student=name;
-document.getElementById("startScreen").classList.add("hidden");
-document.getElementById("quizSection").classList.remove("hidden");
-startTimer();
-loadQuestion();
-}
 
 function startTimer(){
 let interval=setInterval(()=>{
@@ -251,9 +235,11 @@ time--;
 let min=Math.floor(time/60);
 let sec=time%60;
 timerDisplay.innerText=`${min<10?"0":""}${min}:${sec<10?"0":""}${sec}`;
+
 if(time<=27){
 timerDisplay.style.color="red";
 }
+
 if(time<=0){
 clearInterval(interval);
 finishQuiz();
@@ -266,9 +252,11 @@ if(index>=quiz.length){
 finishQuiz();
 return;
 }
+
 let q=quiz[index];
 question.innerText=q.q;
 options.innerHTML="";
+
 q.o.forEach((opt,i)=>{
 let btn=document.createElement("button");
 btn.innerText=opt;
@@ -285,9 +273,10 @@ options.appendChild(btn);
 }
 
 function finishQuiz(){
-document.getElementById("quizSection").classList.add("hidden");
+document.getElementById("quizBox").classList.add("hidden");
 resultBox.classList.remove("hidden");
 
+let name=document.getElementById("studentName").value || "Student";
 let percentage=Math.round((score/quiz.length)*100);
 let remark=percentage>=50?"Impressive 🎉":"Improve 💪";
 
@@ -296,7 +285,7 @@ confetti({particleCount:200,spread:120});
 }
 
 resultBox.innerHTML=`
-<h2>${student} you scored ${score}/25 (${percentage}%)</h2>
+<h2>${name} scored ${score}/25 (${percentage}%)</h2>
 <h3>${remark}</h3>
 <button class="action" onclick="showReview()">Click to see wrong answers</button>
 <br>
@@ -310,12 +299,10 @@ let review=document.getElementById("review");
 review.innerHTML="";
 quiz.forEach((q,i)=>{
 let div=document.createElement("div");
-div.style.marginBottom="15px";
 div.innerHTML=`<p>${q.q}</p>`;
 q.o.forEach((opt,index)=>{
 let p=document.createElement("p");
 p.innerText=opt;
-p.style.padding="5px";
 if(index===q.a) p.classList.add("correct");
 if(answers[i]!==q.a && index===answers[i]) p.classList.add("wrong");
 div.appendChild(p);
@@ -323,6 +310,9 @@ div.appendChild(p);
 review.appendChild(div);
 });
 }
+
+startTimer();
+loadQuestion();
 
 </script>
 </body>
