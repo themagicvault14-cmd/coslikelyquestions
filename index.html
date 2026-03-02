@@ -16,16 +16,16 @@ font-family:'Poppins',sans-serif;
 }
 
 body{
-height:100vh;
-overflow:hidden;
+min-height:100vh;
+overflow-y:auto; /* ENABLE SCROLL */
 background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 display:flex;
 justify-content:center;
-align-items:center;
+align-items:flex-start;
+padding:40px 0;
 color:white;
 }
 
-/* Animated particle background */
 canvas{
 position:fixed;
 top:0;
@@ -33,7 +33,6 @@ left:0;
 z-index:-1;
 }
 
-/* Glass Card */
 .container{
 width:95%;
 max-width:900px;
@@ -41,7 +40,6 @@ padding:30px;
 border-radius:25px;
 background: rgba(255,255,255,0.08);
 backdrop-filter: blur(25px);
--webkit-backdrop-filter: blur(25px);
 border:1px solid rgba(255,255,255,0.2);
 box-shadow:0 25px 50px rgba(0,0,0,0.5);
 animation:fadeIn 1s ease;
@@ -52,24 +50,32 @@ from{opacity:0;transform:translateY(30px);}
 to{opacity:1;transform:translateY(0);}
 }
 
-h1{
-text-align:center;
-margin-bottom:15px;
-font-weight:700;
-}
+h1{text-align:center;margin-bottom:15px;}
 
 .timer{
 text-align:right;
 font-weight:600;
-font-size:18px;
-margin-bottom:15px;
+margin-bottom:10px;
 transition:0.3s;
 }
 
-.question{
-font-size:18px;
+.progress-container{
+width:100%;
+height:10px;
+background:rgba(255,255,255,0.15);
+border-radius:10px;
 margin-bottom:15px;
+overflow:hidden;
 }
+
+.progress-bar{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
+transition:width 0.4s ease;
+}
+
+.question{margin-bottom:15px;}
 
 .options button{
 width:100%;
@@ -80,8 +86,6 @@ border-radius:15px;
 cursor:pointer;
 background:rgba(255,255,255,0.15);
 color:white;
-font-weight:500;
-backdrop-filter:blur(15px);
 transition:0.3s;
 opacity:0;
 }
@@ -106,12 +110,8 @@ to{opacity:1;transform:translateX(0);}
 
 .hidden{display:none;}
 
-.result{
-margin-top:20px;
-}
-
-.correct{background:#00c853 !important;}
-.wrong{background:#d50000 !important;}
+.correct{color:#00e676;}
+.wrong{color:#ff5252;}
 
 button.action{
 margin-top:15px;
@@ -124,8 +124,35 @@ background:linear-gradient(45deg,#00c6ff,#0072ff);
 color:white;
 }
 
-button.action:hover{
-transform:scale(1.05);
+button.action:hover{transform:scale(1.05);}
+
+@keyframes shakeSad{
+0%{transform:translateX(0);}
+25%{transform:translateX(-8px);}
+50%{transform:translateX(8px);}
+75%{transform:translateX(-8px);}
+100%{transform:translateX(0);}
+}
+
+.sad{
+animation:shakeSad 0.6s infinite;
+color:#ff5252;
+}
+
+.review-box{
+margin-top:20px;
+padding:15px;
+background:rgba(0,0,0,0.3);
+border-radius:15px;
+max-height:500px;
+overflow-y:auto;
+}
+
+.leaderboard{
+margin-top:15px;
+padding:15px;
+background:rgba(255,255,255,0.1);
+border-radius:15px;
 }
 </style>
 </head>
@@ -137,38 +164,37 @@ transform:scale(1.05);
 <h1>UNIBEN ICT Quiz</h1>
 
 <input type="text" id="studentName" placeholder="Enter Your Name"
-style="padding:10px; border-radius:10px; border:none; width:100%; margin-bottom:15px; background:rgba(255,255,255,0.2); color:white; backdrop-filter:blur(10px); outline:none;">
+style="padding:10px;border-radius:10px;border:none;width:100%;margin-bottom:10px;">
 
-<div class="timer" id="timer">03:00</div>
+<button class="action" id="startBtn" onclick="startQuiz()">Start Quiz</button>
 
-<div id="quizBox">
+<div class="timer hidden" id="timer">03:00</div>
+
+<div class="progress-container hidden" id="progressContainer">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div id="quizBox" class="hidden">
 <div class="question" id="question"></div>
 <div class="options" id="options"></div>
 </div>
 
-<div class="result hidden" id="result"></div>
+<div class="hidden" id="result"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
 
-/* PARTICLE ANIMATION */
+/* PARTICLES */
 const canvas=document.getElementById("bg");
 const ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
-
 let particles=[];
 for(let i=0;i<80;i++){
-particles.push({
-x:Math.random()*canvas.width,
-y:Math.random()*canvas.height,
-r:Math.random()*2+1,
-d:Math.random()*1
-});
+particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,d:Math.random()*1});
 }
-
 function drawParticles(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
 ctx.fillStyle="rgba(255,255,255,0.4)";
@@ -176,97 +202,89 @@ particles.forEach(p=>{
 ctx.beginPath();
 ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
 ctx.fill();
-});
-update();
-}
-
-function update(){
-particles.forEach(p=>{
 p.y+=p.d;
-if(p.y>canvas.height){
-p.y=0;
-p.x=Math.random()*canvas.width;
-}
+if(p.y>canvas.height){p.y=0;p.x=Math.random()*canvas.width;}
 });
 }
-
 setInterval(drawParticles,30);
 
-
 /* QUIZ DATA */
-const quiz=[
+const quiz=[ /* KEEP YOUR 25 QUESTIONS HERE SAME AS BEFORE */ 
 {q:`1... Which of the generation leads to the development of Internet`,o:["5th generation","3rd generation","4th generation","2nd generation"],a:2},
 {q:`2.... Which of this protocol is design to search,retrieve and display documents from remote`,o:["Archie","Gopher","Maily mail","Telnet"],a:1},
-{q:`3... Precious( ICT course rep) drop a message in the community group which allow every member of the community to see the message. This is an example of`,o:["Mail forwarding services","Gopher","Maily mix","Telnet"],a:2},
+{q:`3... Precious( ICT course rep)...`,o:["Mail forwarding services","Gopher","Maily mix","Telnet"],a:2},
 {q:`4... Which of this is categorize under Auxiliary hardware`,o:["Heat sink","Bridge","Router","Analog model"],a:0},
-{q:`5... In hybrid computer which component serves as solver of differential equation`,o:["Analog","Expansion card","Digital","The control unit"],a:0},
+{q:`5... In hybrid computer...`,o:["Analog","Expansion card","Digital","The control unit"],a:0},
 {q:`6... Convert A45 base 16 to Octal`,o:["5115","5105","5015","4515"],a:1},
 {q:`7.... Convert 11100101 to Hexadecimal`,o:["E5","5E","D5","5D"],a:0},
-{q:`8... The smallest addressable memory data item on a computer is...`,o:["Bit","Byte","Nibble","A&B"],a:1},
-{q:`9.... In ASCII the letter D code value is`,o:["65","71","68","97"],a:2},
-{q:`10... One of the uses of ASCII is`,o:["Text emulation","Text manipulation which includes sorting, collating and constructing sentences","Accepting text as either information or command","All of the above"],a:3},
-{q:`11... Integrated circuit was built in`,o:["Micro processor","Central processor","Silicon chip","None of the above"],a:2},
-{q:`12... One of the following is 7 bits encoding scheme`,o:["BCD","EBCDIC","ASCII","All of the above"],a:2},
-{q:`13... Convert 10111010 in Binary to Hexadecimal`,o:["CA","BA","7B","7A"],a:1},
-{q:`14... One of the following is used in weather forecasting research`,o:["Mainframe","Mini computer","Super computer","Hybrid computer"],a:2},
-{q:`15... One of this is use to locate files on anonymous ftp server`,o:["Ftp","Archie","Gopher","TCP"],a:1},
-{q:`16... Which of the type of web browser allow the user to see more of what the website pass to offer`,o:["Text oriented browser","Graphical browser","Google browser","Firefox"],a:1},
-{q:`17... Application software can also be classified under special purpose computer`,o:["True","False","A&B","I don't know"],a:0},
-{q:`18... The components of computer which connect various components of computer and allow them to communicate is`,o:["Expansion card","Central processing unit","Optical drive","Motherboard"],a:3},
-{q:`19... Code value of ASCII is`,o:["0-127","0...63","1-128","0-128"],a:0},
-{q:`20.... The last bit of the BCD represent`,o:["The zone","The magnitude (0-7)","Digit parity","The character value"],a:2},
-{q:`21... An acronym for electronic Numerical Integrator and Calculator is`,o:["ENIC","EDVAC","ENIAC","ENAIC"],a:2},
-{q:`22... All are components of the motherboard except`,o:["USB","PCI slot","Floppy controller","Parallel plug in"],a:3},
-{q:`23... These are insceptable circuit boils to add functionality to a computer`,o:["Optical drive","Expansion card","Hard drive","All of the above"],a:1},
-{q:`24... Your phone is an example of`,o:["Mini computer","Micro computer","Super computer","Mainframe computer"],a:1},
-{q:`25... Which of the following can operate non stop for more than 10yrs`,o:["Mini computer","Super computer","Mainframe computer","Micro computer"],a:2}
+{q:`8... The smallest addressable memory data item`,o:["Bit","Byte","Nibble","A&B"],a:1},
+{q:`9.... ASCII D code`,o:["65","71","68","97"],a:2},
+{q:`10... Uses of ASCII`,o:["Text emulation","Text manipulation","Accepting text","All of the above"],a:3},
+{q:`11... Integrated circuit was built in`,o:["Micro processor","Central processor","Silicon chip","None"],a:2},
+{q:`12... 7 bits encoding scheme`,o:["BCD","EBCDIC","ASCII","All"],a:2},
+{q:`13... Convert 10111010`,o:["CA","BA","7B","7A"],a:1},
+{q:`14... Weather forecasting`,o:["Mainframe","Mini","Super","Hybrid"],a:2},
+{q:`15... Locate files on ftp`,o:["Ftp","Archie","Gopher","TCP"],a:1},
+{q:`16... Type of browser`,o:["Text","Graphical","Google","Firefox"],a:1},
+{q:`17... Application software special purpose`,o:["True","False","A&B","I don't know"],a:0},
+{q:`18... Connect components`,o:["Expansion card","CPU","Optical","Motherboard"],a:3},
+{q:`19... ASCII value`,o:["0-127","0...63","1-128","0-128"],a:0},
+{q:`20.... Last bit BCD`,o:["Zone","Magnitude","Parity","Character"],a:2},
+{q:`21... ENIAC`,o:["ENIC","EDVAC","ENIAC","ENAIC"],a:2},
+{q:`22... Motherboard except`,o:["USB","PCI slot","Floppy","Parallel"],a:3},
+{q:`23... Circuit boards`,o:["Optical","Expansion card","Hard drive","All"],a:1},
+{q:`24... Phone example`,o:["Mini","Micro","Super","Mainframe"],a:1},
+{q:`25... Operate non stop`,o:["Mini","Super","Mainframe","Micro"],a:2}
 ];
 
-let index=0;
-let score=0;
-let answers=[];
-let time=180;
+let index=0,score=0,answers=[],time=180,timerInterval;
 
 const question=document.getElementById("question");
 const options=document.getElementById("options");
 const resultBox=document.getElementById("result");
 const timerDisplay=document.getElementById("timer");
+const progressBar=document.getElementById("progressBar");
+
+function startQuiz(){
+let name=document.getElementById("studentName").value.trim();
+if(name===""){alert("Enter your name first!");return;}
+document.getElementById("startBtn").style.display="none";
+document.getElementById("studentName").disabled=true;
+document.getElementById("quizBox").classList.remove("hidden");
+document.getElementById("timer").classList.remove("hidden");
+document.getElementById("progressContainer").classList.remove("hidden");
+startTimer();
+loadQuestion();
+}
 
 function startTimer(){
-let interval=setInterval(()=>{
+timerInterval=setInterval(()=>{
 time--;
 let min=Math.floor(time/60);
 let sec=time%60;
 timerDisplay.innerText=`${min<10?"0":""}${min}:${sec<10?"0":""}${sec}`;
-
-if(time<=27){
-timerDisplay.style.color="red";
-}
-
-if(time<=0){
-clearInterval(interval);
-finishQuiz();
-}
+if(time<=27) timerDisplay.style.color="red";
+if(time<=0){clearInterval(timerInterval);finishQuiz();}
 },1000);
 }
 
-function loadQuestion(){
-if(index>=quiz.length){
-finishQuiz();
-return;
+function updateProgress(){
+progressBar.style.width=((index)/quiz.length)*100+"%";
 }
 
+function loadQuestion(){
+if(index>=quiz.length){finishQuiz();return;}
+updateProgress();
 let q=quiz[index];
 question.innerText=q.q;
 options.innerHTML="";
-
 q.o.forEach((opt,i)=>{
 let btn=document.createElement("button");
 btn.innerText=opt;
 btn.classList.add(i%2===0?"left":"right");
 btn.style.animationDelay=`${i*0.15}s`;
 btn.onclick=()=>{
-answers.push(i);
+answers[index]=i;
 if(i===q.a) score++;
 index++;
 loadQuestion();
@@ -276,24 +294,42 @@ options.appendChild(btn);
 }
 
 function finishQuiz(){
+clearInterval(timerInterval);
+updateProgress();
 document.getElementById("quizBox").classList.add("hidden");
 resultBox.classList.remove("hidden");
 
-let name=document.getElementById("studentName").value || "Student";
+let name=document.getElementById("studentName").value;
 let percentage=Math.round((score/quiz.length)*100);
-let remark=percentage>=50?"Impressive 🎉":"Improve 💪";
+let sadMode=score<=10;
 
-if(percentage>=50){
-confetti({particleCount:200,spread:120});
-}
+if(!sadMode){confetti({particleCount:200,spread:120});}
+
+/* LEADERBOARD STORAGE */
+let high=localStorage.getItem("highestScore");
+let low=localStorage.getItem("lowestScore");
+
+if(high===null || score>high){localStorage.setItem("highestScore",score);}
+if(low===null || score<low){localStorage.setItem("lowestScore",score);}
+
+high=localStorage.getItem("highestScore");
+low=localStorage.getItem("lowestScore");
 
 resultBox.innerHTML=`
-<h2>${name} scored ${score}/25 (${percentage}%)</h2>
-<h3>${remark}</h3>
-<button class="action" onclick="showReview()">Click to see wrong answers</button>
-<br>
+<h2 class="${sadMode?'sad':''}">${name} scored ${score}/25 (${percentage}%)</h2>
+<h3 class="${sadMode?'sad':''}">${sadMode?'That was rough 😭':'Impressive 🎉'}</h3>
+
+<div class="leaderboard">
+<h3>Leaderboard</h3>
+<p>🏆 Highest Score: ${high}/25</p>
+<p>📉 Lowest Score: ${low}/25</p>
+</div>
+
 <button class="action" onclick="window.open('https://wa.me/2348079558310')">See more about developer</button>
-<div id="review"></div>
+
+<button class="action" onclick="showReview()">Show Wrong Answers</button>
+<div class="review-box" id="review"></div>
+
 `;
 }
 
@@ -301,21 +337,18 @@ function showReview(){
 let review=document.getElementById("review");
 review.innerHTML="";
 quiz.forEach((q,i)=>{
+if(answers[i]!==q.a){
 let div=document.createElement("div");
-div.innerHTML=`<p>${q.q}</p>`;
-q.o.forEach((opt,index)=>{
-let p=document.createElement("p");
-p.innerText=opt;
-if(index===q.a) p.classList.add("correct");
-if(answers[i]!==q.a && index===answers[i]) p.classList.add("wrong");
-div.appendChild(p);
-});
+div.innerHTML=`
+<p><strong>${q.q}</strong></p>
+<p class="wrong">Your Answer: ${q.o[answers[i]]||"Not answered"}</p>
+<p class="correct">Correct Answer: ${q.o[q.a]}</p>
+<hr>
+`;
 review.appendChild(div);
+}
 });
 }
-
-startTimer();
-loadQuestion();
 
 </script>
 </body>
