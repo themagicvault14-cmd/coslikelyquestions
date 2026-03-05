@@ -1,356 +1,512 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UNIBEN ICT Quiz</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Real BC Crash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .title-font { font-family: 'Space Grotesk', sans-serif; }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        #graph-canvas {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(to bottom, #18181b 0%, #09090b 100%);
+            border-radius: 20px;
+            border: 3px solid #27272a;
+        }
 
-<style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Poppins',sans-serif;
-}
+        .multiplier {
+            font-size: 5.5rem;
+            line-height: 1;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            text-shadow: 0 0 40px currentColor;
+        }
 
-body{
-min-height:100vh;
-overflow-y:auto; /* ENABLE SCROLL */
-background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-display:flex;
-justify-content:center;
-align-items:flex-start;
-padding:40px 0;
-color:white;
-}
+        .history-panel {
+            transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
 
-canvas{
-position:fixed;
-top:0;
-left:0;
-z-index:-1;
-}
+        .dot { box-shadow: 0 0 15px currentColor; }
 
-.container{
-width:95%;
-max-width:900px;
-padding:30px;
-border-radius:25px;
-background: rgba(255,255,255,0.08);
-backdrop-filter: blur(25px);
-border:1px solid rgba(255,255,255,0.2);
-box-shadow:0 25px 50px rgba(0,0,0,0.5);
-animation:fadeIn 1s ease;
-}
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(30px);}
-to{opacity:1;transform:translateY(0);}
-}
-
-h1{text-align:center;margin-bottom:15px;}
-
-.timer{
-text-align:right;
-font-weight:600;
-margin-bottom:10px;
-transition:0.3s;
-}
-
-.progress-container{
-width:100%;
-height:10px;
-background:rgba(255,255,255,0.15);
-border-radius:10px;
-margin-bottom:15px;
-overflow:hidden;
-}
-
-.progress-bar{
-height:100%;
-width:0%;
-background:linear-gradient(90deg,#00c6ff,#0072ff);
-transition:width 0.4s ease;
-}
-
-.question{margin-bottom:15px;}
-
-.options button{
-width:100%;
-margin:8px 0;
-padding:12px;
-border:none;
-border-radius:15px;
-cursor:pointer;
-background:rgba(255,255,255,0.15);
-color:white;
-transition:0.3s;
-opacity:0;
-}
-
-.options button:hover{
-background:rgba(255,255,255,0.3);
-transform:scale(1.03);
-}
-
-.left{animation:slideLeft 0.6s forwards;}
-.right{animation:slideRight 0.6s forwards;}
-
-@keyframes slideLeft{
-from{opacity:0;transform:translateX(-50px);}
-to{opacity:1;transform:translateX(0);}
-}
-
-@keyframes slideRight{
-from{opacity:0;transform:translateX(50px);}
-to{opacity:1;transform:translateX(0);}
-}
-
-.hidden{display:none;}
-
-.correct{color:#00e676;}
-.wrong{color:#ff5252;}
-
-button.action{
-margin-top:15px;
-padding:10px 20px;
-border:none;
-border-radius:20px;
-cursor:pointer;
-font-weight:600;
-background:linear-gradient(45deg,#00c6ff,#0072ff);
-color:white;
-}
-
-button.action:hover{transform:scale(1.05);}
-
-@keyframes shakeSad{
-0%{transform:translateX(0);}
-25%{transform:translateX(-8px);}
-50%{transform:translateX(8px);}
-75%{transform:translateX(-8px);}
-100%{transform:translateX(0);}
-}
-
-.sad{
-animation:shakeSad 0.6s infinite;
-color:#ff5252;
-}
-
-.review-box{
-margin-top:20px;
-padding:15px;
-background:rgba(0,0,0,0.3);
-border-radius:15px;
-max-height:500px;
-overflow-y:auto;
-}
-
-.leaderboard{
-margin-top:15px;
-padding:15px;
-background:rgba(255,255,255,0.1);
-border-radius:15px;
-}
-</style>
+        .countdown {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen pb-12">
+    <div class="max-w-md mx-auto bg-zinc-900 min-h-screen overflow-hidden border-x border-zinc-800 shadow-2xl relative">
+        
+        <!-- TOP BAR -->
+        <div class="bg-black px-5 py-4 flex items-center justify-between border-b border-zinc-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl flex items-center justify-center text-3xl shadow-inner">💥</div>
+                <div class="title-font text-3xl font-bold tracking-tighter">CRASH</div>
+            </div>
+            
+            <div onclick="toggleHistory()" 
+                 class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-3xl text-sm font-medium cursor-pointer active:scale-95 transition-all">
+                📜 <span>HISTORY</span>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-zinc-950 rounded-3xl px-5 py-1 text-sm font-medium border border-zinc-700">
+                <div class="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                NGN <span id="balance" class="font-mono font-bold">2,148.67</span>
+            </div>
+        </div>
 
-<canvas id="bg"></canvas>
+        <!-- RECENT MULTIPLIERS -->
+        <div class="px-4 py-4 bg-zinc-950 border-b border-zinc-800 overflow-x-auto">
+            <div id="recent-bar" class="flex gap-6 whitespace-nowrap"></div>
+        </div>
 
-<div class="container">
-<h1>UNIBEN ICT Quiz</h1>
+        <!-- MAIN GAME -->
+        <div class="px-4 pt-5">
+            <!-- GRAPH -->
+            <div class="relative">
+                <canvas id="graph-canvas" width="400" height="280"></canvas>
+                
+                <!-- LIVE MULTIPLIER -->
+                <div id="multiplier-display" 
+                     class="absolute top-12 left-1/2 -translate-x-1/2 text-center pointer-events-none z-10">
+                    <div id="mult-value" class="multiplier text-emerald-400">1.00</div>
+                    <div class="text-xs tracking-[4px] text-zinc-400 -mt-3">MULTIPLIER</div>
+                </div>
 
-<input type="text" id="studentName" placeholder="Enter Your Name"
-style="padding:10px;border-radius:10px;border:none;width:100%;margin-bottom:10px;">
+                <!-- STATUS -->
+                <div id="status-area" 
+                     class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/80 px-8 py-3 rounded-3xl text-center min-w-[220px]">
+                    <div id="status-text" class="font-medium text-lg">NEXT ROUND IN <span id="countdown" class="countdown text-emerald-400">5</span></div>
+                    <div id="sub-status" class="text-xs text-zinc-400 mt-1">Place your bet now</div>
+                </div>
+            </div>
 
-<button class="action" id="startBtn" onclick="startQuiz()">Start Quiz</button>
+            <!-- BET PANEL -->
+            <div class="mt-8 bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
+                <div class="flex justify-between mb-4 items-baseline">
+                    <span class="text-zinc-400 text-sm">YOUR BET</span>
+                    <span id="bet-amount-display" class="font-mono text-3xl font-bold">100</span>
+                </div>
 
-<div class="timer hidden" id="timer">10:00</div>
+                <div class="grid grid-cols-4 gap-3 mb-6">
+                    <button onclick="quickBet(50)" class="bg-zinc-800 hover:bg-zinc-700 py-4 rounded-2xl text-sm font-medium active:scale-95">+50</button>
+                    <button onclick="quickBet(100)" class="bg-zinc-800 hover:bg-zinc-700 py-4 rounded-2xl text-sm font-medium active:scale-95">+100</button>
+                    <button onclick="quickBet(250)" class="bg-zinc-800 hover:bg-zinc-700 py-4 rounded-2xl text-sm font-medium active:scale-95">+250</button>
+                    <button onclick="quickBet(500)" class="bg-zinc-800 hover:bg-zinc-700 py-4 rounded-2xl text-sm font-medium active:scale-95">MAX</button>
+                </div>
 
-<div class="progress-container hidden" id="progressContainer">
-<div class="progress-bar" id="progressBar"></div>
-</div>
+                <input id="bet-input" type="number" value="100" 
+                       oninput="updateBetDisplay()" 
+                       class="w-full bg-zinc-900 border border-zinc-700 rounded-3xl py-5 text-center text-4xl font-bold font-mono focus:border-emerald-500 outline-none">
 
-<div id="quizBox" class="hidden">
-<div class="question" id="question"></div>
-<div class="options" id="options"></div>
-</div>
+                <!-- ACTION BUTTON -->
+                <button id="action-btn"
+                        onclick="handleAction()"
+                        class="mt-6 w-full py-7 text-2xl font-bold rounded-3xl transition-all active:scale-95 bg-emerald-500 text-black">
+                    PLACE BET
+                </button>
+            </div>
+        </div>
 
-<div class="hidden" id="result"></div>
-</div>
+        <!-- HIDDEN HISTORY -->
+        <div id="history-panel" class="history-panel hidden fixed inset-x-0 bottom-0 bg-zinc-900 border-t border-zinc-700 max-h-[65%] overflow-hidden rounded-t-3xl">
+            <div class="px-6 py-5 flex justify-between border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
+                <div class="text-xl font-semibold">Round History</div>
+                <button onclick="toggleHistory()" class="text-zinc-400 text-xl">✕</button>
+            </div>
+            
+            <div class="px-6">
+                <div class="grid grid-cols-12 text-[10px] font-medium text-zinc-400 py-4 border-b border-zinc-800">
+                    <div class="col-span-5">GAME ID</div>
+                    <div class="col-span-3 text-center">RESULT</div>
+                    <div class="col-span-4 text-right">HASH</div>
+                </div>
+                <div id="history-list" class="max-h-[380px] overflow-y-auto divide-y divide-zinc-800"></div>
+            </div>
+        </div>
 
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        <!-- FOOTER INFO -->
+        <div class="text-center text-[10px] text-zinc-500 mt-8 px-4">
+            Game runs automatically like real BC.Game • Watch even if you don't bet • Real FOMO 🔥
+        </div>
+    </div>
 
-<script>
+    <script>
+        // ====================== STATE ======================
+        let balance = 2148.67;
+        let currentBet = 100;
+        let gameState = "BETTING"; // BETTING | FLYING | CRASHED
+        let countdown = 5;
+        let countdownInterval = null;
+        let hasBet = false;
+        let betAmountPlaced = 0;
+        let cashedOut = false;
+        let multiplier = 1.00;
+        let crashPoint = 0;
+        let isFlying = false;
+        let startTime = 0;
+        let graphPoints = [];
+        let animationFrame = null;
+        let nextGameId = 9032253;
 
-/* PARTICLES */
-const canvas=document.getElementById("bg");
-const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-let particles=[];
-for(let i=0;i<80;i++){
-particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,d:Math.random()*1});
-}
-function drawParticles(){
-ctx.clearRect(0,0,canvas.width,canvas.height);
-ctx.fillStyle="rgba(255,255,255,0.4)";
-particles.forEach(p=>{
-ctx.beginPath();
-ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
-ctx.fill();
-p.y+=p.d;
-if(p.y>canvas.height){p.y=0;p.x=Math.random()*canvas.width;}
-});
-}
-setInterval(drawParticles,30);
+        let historyData = [
+            { id: "9032252", mult: 1.02, hash: "baaf37d2525d..." },
+            { id: "9032251", mult: 28.20, hash: "eb6bef3e55b0..." },
+            { id: "9032250", mult: 8.45, hash: "208525d1f9d53..." },
+            { id: "9032249", mult: 1.02, hash: "442b15ed0072..." },
+            { id: "9032248", mult: 1.59, hash: "5b223ccb9051..." }
+        ];
 
-/* QUIZ DATA */
-const quiz=[
-{q:`1... Which of the generation leads to the development of Internet`,o:["5th generation","3rd generation","4th generation","2nd generation"],a:2},
-{q:`2.... Which of this protocol is design to search,retrieve and display documents from remote`,o:["Archie","Gopher","Maily mail","Telnet"],a:1},
-{q:`3... Precious( ICT course rep) drop a message in the community group which allow every member of the community to see the message. This is an example of`,o:["Mail forwarding services","Gopher","Maily mix","Telnet"],a:2},
-{q:`4... Which of this is categorize under Auxiliary hardware`,o:["Heat sink","Bridge","Router","Analog model"],a:0},
-{q:`5... In hybrid computer which component serves as solver of differential equation`,o:["Analog","Expansion card","Digital","The control unit"],a:0},
-{q:`6... Convert A45 base 16 to Octal`,o:["5115","5105","5015","4515"],a:1},
-{q:`7.... Convert 11100101 to Hexadecimal`,o:["E5","5E","D5","5D"],a:0},
-{q:`8... The smallest addressable memory data item on a computer is...`,o:["Bit","Byte","Nibble","A&B"],a:1},
-{q:`9.... In ASCII the letter D code value is`,o:["65","71","68","97"],a:2},
-{q:`10... One of the uses of ASCII is`,o:["Text emulation","Text manipulation which includes sorting, collating and constructing sentences","Accepting text as either information or command","All of the above"],a:3},
-{q:`11... Integrated circuit was built in`,o:["Micro processor","Central processor","Silicon chip","None of the above"],a:2},
-{q:`12... One of the following is 7 bits encoding scheme`,o:["BCD","EBCDIC","ASCII","All of the above"],a:2},
-{q:`13... Convert 10111010 in Binary to Hexadecimal`,o:["CA","BA","7B","7A"],a:1},
-{q:`14... One of the following is used in weather forecasting research`,o:["Mainframe","Mini computer","Super computer","Hybrid computer"],a:2},
-{q:`15... One of this is use to locate files on anonymous ftp server`,o:["Ftp","Archie","Gopher","TCP"],a:1},
-{q:`16... Which of the type of web browser allow the user to see more of what the website pass to offer`,o:["Text oriented browser","Graphical browser","Google browser","Firefox"],a:1},
-{q:`17... Application software can also be classified under special purpose computer`,o:["True","False","A&B","I don't know"],a:0},
-{q:`18... The components of computer which connect various components of computer and allow them to communicate is`,o:["Expansion card","Central processing unit","Optical drive","Motherboard"],a:3},
-{q:`19... Code value of ASCII is`,o:["0-127","0...63","1-128","0-128"],a:0},
-{q:`20.... The last bit of the BCD represent`,o:["The zone","The magnitude (0-7)","Digit parity","The character value"],a:2},
-{q:`21... An acronym for electronic Numerical Integrator and Calculator is`,o:["ENIC","EDVAC","ENIAC","ENAIC"],a:2},
-{q:`22... All are components of the motherboard except`,o:["USB","PCI slot","Floppy controller","Parallel plug in"],a:3},
-{q:`23... These are insceptable circuit boils to add functionality to a computer`,o:["Optical drive","Expansion card","Hard drive","All of the above"],a:1},
-{q:`24... Your phone is an example of`,o:["Mini computer","Micro computer","Super computer","Mainframe computer"],a:1},
-{q:`25... Which of the following can operate non stop for more than 10yrs`,o:["Mini computer","Super computer","Mainframe computer","Micro computer"],a:2}
-];
+        // DOM elements
+        const canvas = document.getElementById("graph-canvas");
+        const ctx = canvas.getContext("2d");
+        const multEl = document.getElementById("mult-value");
+        const statusText = document.getElementById("status-text");
+        const subStatus = document.getElementById("sub-status");
+        const countdownEl = document.getElementById("countdown");
+        const actionBtn = document.getElementById("action-btn");
+        const balanceEl = document.getElementById("balance");
 
+        // ====================== REALISTIC CRASH GENERATOR (same as BC.Game) ======================
+        function generateCrashPoint() {
+            const roll = Math.random();
+            if (roll < 0.53) return parseFloat((1 + Math.random() * 0.99).toFixed(2));
+            if (roll < 0.78) return parseFloat((2 + Math.random() * 7.99).toFixed(2));
+            if (roll < 0.93) return parseFloat((10 + Math.random() * 19.99).toFixed(2));
+            return parseFloat((30 + Math.random() * 180).toFixed(2));
+        }
 
-let index=0,score=0,answers=[],time=600,timerInterval;
+        function generateFakeHash() {
+            const chars = "abcdef0123456789";
+            let hash = "";
+            for (let i = 0; i < 13; i++) hash += chars[Math.floor(Math.random() * chars.length)];
+            return hash + "...";
+        }
 
-const question=document.getElementById("question");
-const options=document.getElementById("options");
-const resultBox=document.getElementById("result");
-const timerDisplay=document.getElementById("timer");
-const progressBar=document.getElementById("progressBar");
+        // ====================== GRAPH ======================
+        function drawGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid
+            ctx.strokeStyle = "#27272a";
+            ctx.lineWidth = 1.5;
+            for (let i = 1; i < 6; i++) {
+                const y = (canvas.height / 6) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
 
-function startQuiz(){
-let name=document.getElementById("studentName").value.trim();
-if(name===""){alert("Enter your name first!");return;}
-document.getElementById("startBtn").style.display="none";
-document.getElementById("studentName").disabled=true;
-document.getElementById("quizBox").classList.remove("hidden");
-document.getElementById("timer").classList.remove("hidden");
-document.getElementById("progressContainer").classList.remove("hidden");
-startTimer();
-loadQuestion();
-}
+            if (graphPoints.length < 2) return;
 
-function startTimer(){
-timerInterval=setInterval(()=>{
-time--;
-let min=Math.floor(time/60);
-let sec=time%60;
-timerDisplay.innerText=`${min<10?"0":""}${min}:${sec<10?"0":""}${sec}`;
-if(time<=27) timerDisplay.style.color="red";
-if(time<=0){clearInterval(timerInterval);finishQuiz();}
-},1000);
-}
+            const maxMult = Math.max(...graphPoints.map(p => p.y)) * 1.15 || 5;
+            ctx.strokeStyle = "#22c55e";
+            ctx.lineWidth = 7;
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = "#22c55e";
+            ctx.beginPath();
 
-function updateProgress(){
-progressBar.style.width=((index)/quiz.length)*100+"%";
-}
+            for (let i = 0; i < graphPoints.length; i++) {
+                const p = graphPoints[i];
+                const x = (p.x / 420) * canvas.width;
+                const y = canvas.height - (p.y / maxMult) * (canvas.height * 0.82);
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
 
-function loadQuestion(){
-if(index>=quiz.length){finishQuiz();return;}
-updateProgress();
-let q=quiz[index];
-question.innerText=q.q;
-options.innerHTML="";
-q.o.forEach((opt,i)=>{
-let btn=document.createElement("button");
-btn.innerText=opt;
-btn.classList.add(i%2===0?"left":"right");
-btn.style.animationDelay=`${i*0.15}s`;
-btn.onclick=()=>{
-answers[index]=i;
-if(i===q.a) score++;
-index++;
-loadQuestion();
-};
-options.appendChild(btn);
-});
-}
+            // End dot
+            const last = graphPoints[graphPoints.length - 1];
+            const lx = (last.x / 420) * canvas.width;
+            const ly = canvas.height - (last.y / maxMult) * (canvas.height * 0.82);
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath();
+            ctx.arc(lx, ly, 11, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
-function finishQuiz(){
-clearInterval(timerInterval);
-updateProgress();
-document.getElementById("quizBox").classList.add("hidden");
-resultBox.classList.remove("hidden");
+        // ====================== ANIMATION ======================
+        function gameLoop() {
+            if (!isFlying) return;
 
-let name=document.getElementById("studentName").value;
-let percentage=Math.round((score/quiz.length)*100);
-let sadMode=score<=10;
+            const elapsed = (Date.now() - startTime) / 1000;
+            multiplier = Math.max(1, 1 + (elapsed * 1.75)); // feels exactly like real Crash speed
 
-if(!sadMode){confetti({particleCount:200,spread:120});}
+            multEl.textContent = multiplier.toFixed(2);
+            multEl.className = `multiplier ${multiplier < 2 ? 'text-orange-400' : multiplier < 10 ? 'text-emerald-400' : 'text-yellow-300'}`;
 
-/* LEADERBOARD STORAGE */
-let high=localStorage.getItem("highestScore");
-let low=localStorage.getItem("lowestScore");
+            graphPoints.push({ x: elapsed * 38, y: multiplier });
+            drawGraph();
 
-if(high===null || score>high){localStorage.setItem("highestScore",score);}
-if(low===null || score<low){localStorage.setItem("lowestScore",score);}
+            if (multiplier >= crashPoint) {
+                handleCrash();
+                return;
+            }
 
-high=localStorage.getItem("highestScore");
-low=localStorage.getItem("lowestScore");
+            animationFrame = requestAnimationFrame(gameLoop);
+        }
 
-resultBox.innerHTML=`
-<h2 class="${sadMode?'sad':''}">${name} scored ${score}/25 (${percentage}%)</h2>
-<h3 class="${sadMode?'sad':''}">${sadMode?'That was rough 😭':'Impressive 🎉'}</h3>
+        // ====================== AUTO ROUND CYCLE (REAL BC.GAME STYLE) ======================
+        function startBettingPhase() {
+            gameState = "BETTING";
+            countdown = 5;
+            hasBet = false;
+            cashedOut = false;
+            multiplier = 1.00;
+            graphPoints = [];
+            isFlying = false;
 
-<div class="leaderboard">
-<h3>Leaderboard</h3>
-<p>🏆 Highest Score: ${high}/25</p>
-<p>📉 Lowest Score: ${low}/25</p>
-</div>
+            multEl.textContent = "1.00";
+            updateUI();
+            startCountdownTimer();
+        }
 
-<button class="action" onclick="window.open('https://wa.me/2348079558310')">See more about developer</button>
+        function startCountdownTimer() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownEl.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    startFlying();
+                }
+            }, 1000);
+        }
 
-<button class="action" onclick="showReview()">Show Wrong Answers</button>
-<div class="review-box" id="review"></div>
+        function startFlying() {
+            gameState = "FLYING";
+            isFlying = true;
+            crashPoint = generateCrashPoint();
+            startTime = Date.now();
+            graphPoints = [{ x: 0, y: 1 }];
+            multiplier = 1.00;
 
-`;
-}
+            updateUI();
+            drawGraph();
+            gameLoop();
+        }
 
-function showReview(){
-let review=document.getElementById("review");
-review.innerHTML="";
-quiz.forEach((q,i)=>{
-if(answers[i]!==q.a){
-let div=document.createElement("div");
-div.innerHTML=`
-<p><strong>${q.q}</strong></p>
-<p class="wrong">Your Answer: ${q.o[answers[i]]||"Not answered"}</p>
-<p class="correct">Correct Answer: ${q.o[q.a]}</p>
-<hr>
-`;
-review.appendChild(div);
-}
-});
-}
+        function handleCrash() {
+            cancelAnimationFrame(animationFrame);
+            isFlying = false;
+            gameState = "CRASHED";
 
-</script>
+            // Show crash
+            multEl.textContent = crashPoint.toFixed(2);
+            multEl.className = "multiplier text-red-500";
+
+            statusText.innerHTML = `💥 CRASHED @ <span class="text-red-500">${crashPoint.toFixed(2)}x</span>`;
+            subStatus.textContent = "Next round starting soon...";
+
+            // Add to history (real multiplier that flew)
+            addToHistory(crashPoint);
+
+            // If bet was placed and not cashed out → lose
+            if (hasBet && !cashedOut) {
+                subStatus.innerHTML += `<br><span class="text-red-400 text-xs">You lost ${betAmountPlaced} NGN</span>`;
+            }
+
+            actionBtn.textContent = "WAIT...";
+
+            // Auto start next betting phase after 3 seconds (real feel)
+            setTimeout(() => {
+                startBettingPhase();
+            }, 3000);
+        }
+
+        function cashOut() {
+            if (!isFlying || !hasBet || cashedOut) return;
+            
+            cancelAnimationFrame(animationFrame);
+            isFlying = false;
+            cashedOut = true;
+            gameState = "CRASHED";
+
+            const winnings = betAmountPlaced * multiplier;
+            balance += winnings;
+            balanceEl.textContent = balance.toFixed(2);
+
+            statusText.innerHTML = `✅ CASHED OUT @ <span class="text-emerald-400">${multiplier.toFixed(2)}x</span>`;
+            subStatus.innerHTML = `+${(winnings - betAmountPlaced).toFixed(2)} NGN`;
+
+            addToHistory(multiplier); // record the cashout point for history
+
+            actionBtn.textContent = "WAIT...";
+
+            setTimeout(() => {
+                startBettingPhase();
+            }, 2500);
+        }
+
+        // ====================== HISTORY ======================
+        function addToHistory(mult) {
+            const newEntry = {
+                id: nextGameId++,
+                mult: parseFloat(mult.toFixed(2)),
+                hash: generateFakeHash()
+            };
+            historyData.unshift(newEntry);
+            if (historyData.length > 12) historyData.pop();
+
+            renderRecentBar();
+            renderHistoryList();
+        }
+
+        function renderRecentBar() {
+            const container = document.getElementById("recent-bar");
+            container.innerHTML = "";
+            const recent = historyData.slice(0, 5);
+
+            recent.forEach(item => {
+                const colorClass = item.mult < 2 ? "text-orange-400" : item.mult < 10 ? "text-emerald-400" : "text-yellow-300";
+                const dotClass = item.mult < 2 ? "bg-orange-400" : item.mult < 10 ? "bg-emerald-400" : "bg-yellow-300";
+                
+                const div = document.createElement("div");
+                div.className = "flex flex-col items-center min-w-[58px]";
+                div.innerHTML = `
+                    <div class="w-6 h-6 rounded-2xl ${dotClass} flex items-center justify-center dot mb-1 shadow-xl">
+                        <span class="text-[10px] text-black font-black">•</span>
+                    </div>
+                    <span class="\( {colorClass} text-xs font-bold"> \){item.mult}x</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById("history-list");
+            container.innerHTML = "";
+            historyData.forEach(item => {
+                const color = item.mult < 2 ? "text-orange-400" : item.mult < 10 ? "text-emerald-400" : "text-yellow-300";
+                const dot = item.mult < 2 ? "bg-orange-400" : item.mult < 10 ? "bg-emerald-400" : "bg-yellow-300";
+
+                const row = document.createElement("div");
+                row.className = "grid grid-cols-12 py-4 hover:bg-zinc-800/60 px-2 transition-colors";
+                row.innerHTML = `
+                    <div class="col-span-5 flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full ${dot}"></div>
+                        <span class="font-mono">${item.id}</span>
+                    </div>
+                    <div class="col-span-3 text-center">
+                        <span class="\( {color} text-2xl font-bold"> \){item.mult}x</span>
+                    </div>
+                    <div class="col-span-4 font-mono text-xs text-zinc-500 text-right">${item.hash}</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function toggleHistory() {
+            document.getElementById("history-panel").classList.toggle("hidden");
+        }
+
+        // ====================== BETTING ======================
+        function placeBet() {
+            if (balance < currentBet || gameState !== "BETTING") return;
+            
+            balance -= currentBet;
+            balanceEl.textContent = balance.toFixed(2);
+            hasBet = true;
+            betAmountPlaced = currentBet;
+            updateUI();
+        }
+
+        function handleAction() {
+            if (gameState === "BETTING") {
+                if (!hasBet) placeBet();
+            } 
+            else if (gameState === "FLYING" && hasBet && !cashedOut) {
+                cashOut();
+            }
+        }
+
+        function updateBetDisplay() {
+            currentBet = Math.max(10, parseFloat(document.getElementById("bet-input").value) || 100);
+            document.getElementById("bet-amount-display").textContent = currentBet;
+        }
+
+        function quickBet(add) {
+            if (add === 500) currentBet = Math.floor(balance * 0.85);
+            else currentBet = Math.min(Math.max(10, currentBet + add), Math.floor(balance));
+            document.getElementById("bet-input").value = currentBet;
+            document.getElementById("bet-amount-display").textContent = currentBet;
+        }
+
+        function updateUI() {
+            // Button text
+            if (gameState === "BETTING") {
+                actionBtn.textContent = hasBet ? "BET PLACED ✓" : "PLACE BET";
+                actionBtn.className = `mt-6 w-full py-7 text-2xl font-bold rounded-3xl transition-all active:scale-95 ${hasBet ? 'bg-emerald-600 text-white' : 'bg-emerald-500 text-black'}`;
+                
+                statusText.innerHTML = `NEXT ROUND IN <span id="countdown" class="countdown text-emerald-400">${countdown}</span>`;
+                subStatus.textContent = hasBet ? "You're in for this round!" : "Place your bet now";
+            } 
+            else if (gameState === "FLYING") {
+                actionBtn.textContent = hasBet && !cashedOut ? "CASH OUT NOW" : "WATCHING";
+                actionBtn.className = `mt-6 w-full py-7 text-2xl font-bold rounded-3xl transition-all active:scale-95 ${hasBet && !cashedOut ? 'bg-red-500 text-white' : 'bg-zinc-700 text-zinc-400'}`;
+                
+                statusText.textContent = "FLYING...";
+                subStatus.textContent = hasBet ? "Tap to cash out!" : "You missed this one";
+            } 
+            else if (gameState === "CRASHED") {
+                actionBtn.textContent = "WAIT...";
+                actionBtn.className = "mt-6 w-full py-7 text-2xl font-bold rounded-3xl bg-zinc-700 text-zinc-400";
+            }
+        }
+
+        // ====================== SHAKE FOR FUN ======================
+        function enableShake() {
+            let lastX = 0;
+            window.addEventListener('devicemotion', (e) => {
+                if (!e.accelerationIncludingGravity || gameState === "FLYING") return;
+                const delta = Math.abs(e.accelerationIncludingGravity.x - lastX);
+                if (delta > 13) {
+                    if (gameState === "BETTING") {
+                        clearInterval(countdownInterval);
+                        startFlying();
+                    }
+                }
+                lastX = e.accelerationIncludingGravity.x;
+            });
+        }
+
+        // ====================== INIT ======================
+        function init() {
+            balanceEl.textContent = balance.toFixed(2);
+            document.getElementById("bet-input").value = currentBet;
+            document.getElementById("bet-amount-display").textContent = currentBet;
+
+            renderRecentBar();
+            renderHistoryList();
+            drawGraph();
+
+            // START THE REAL GAME
+            startBettingPhase();
+
+            enableShake();
+
+            // Keyboard (N = force next round)
+            document.addEventListener("keydown", e => {
+                if (e.key.toLowerCase() === "n") {
+                    if (gameState === "BETTING") {
+                        clearInterval(countdownInterval);
+                        startFlying();
+                    }
+                }
+            });
+
+            console.log("%c✅ FULL REAL BC.GAME CRASH READY\nRounds run automatically\nWatch even when you don't bet\nPure FOMO mode activated 👀", "color:#22c55e; font-size:14px");
+        }
+
+        window.onload = init;
+    </script>
 </body>
 </html>
